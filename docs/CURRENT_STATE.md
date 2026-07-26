@@ -1,6 +1,6 @@
 # Current project state
 
-Snapshot date: **2026-07-23**
+Snapshot date: **2026-07-27**
 
 This is a mutable handoff snapshot. It describes what was active when the file
 was last updated; it is not evidence that the active method is superior.
@@ -10,27 +10,30 @@ Agents must verify it against protocols, raw reports, and the experiment log.
 
 - Repository scope: coffee-bean classification, not the separate YOLO/detection
   project.
-- Immediate task type: curate an ML-valid SNI classification dataset before
-  any additional model training.
+- Immediate task type: validation-only controlled Swin-HSSAM/Jiao screening
+  on the audited SNI instance-crop dataset; SNI v2 multiresolution is stopped.
 - OSR and LMMD/UDA are not currently requested.
 - Avoid additional expensive training without a frozen, literature-grounded
   comparison.
 
 ## Current runnable stage
 
-SNI classification manifest v2 is the active data-curation stage. It consumes
-the existing 31,074 audited instance crops without recreating images. The v2
-design collapses uncalibrated size labels into 15 crop-visual classes, retains
-the original 21 labels and size as metadata, adds family and partial-attribute
-labels, writes train-only class weights, and generates two cross-domain
-protocols. Training remains blocked until its audit and weak classes are
-reviewed.
+The SNI v2 GAP-versus-multiresolution screen is complete and stopped. S2MR
+lost to S2G GAP on validation seed 42: Macro `-0.68`, Hard `-0.41`,
+bottom-three `-6.10`, and Worst `-21.89` points. Seeds 123/2026 and test must
+not be run for this protocol.
+
+The user explicitly resumed the separate controlled Jiao Swin-HSSAM
+validation screen on the audited 21-class SNI instance crops. Run only `SJ0`
+versus `SJFULL` seed 42 first. The remaining factorial and additional seeds
+remain gated; test stays locked.
 
 Relevant files:
 
-- `docs/protocols/SNI_CLASSIFICATION_DATASET_V2.md`;
-- `src/bilinear_lmmd/data/preparation/prepare_sni_classification_v2.py`;
-- `notebooks/sni_instance_crop_preparation_colab.ipynb`.
+- `docs/protocols/JIAO_SWIN_HSSAM_PROTOCOL.md`;
+- `src/bilinear_lmmd/experiments/run_jiao_swin_hssam_screening.py`;
+- `notebooks/jiao_swin_hssam_failfast_colab.ipynb`;
+- `docs/results/SNI_V2_MULTIRESOLUTION_SEED42.md`.
 
 The previous Coffee17 multistage protocol is closed:
 
@@ -108,8 +111,9 @@ These are summaries only. Use
   seed- and backbone-sensitive and was not universally useful across datasets.
 - Several candidates produced a favorable single seed and failed multi-seed
   confirmation or lower-tail criteria.
-- SNI multiresolution backbone screening passed its initial gate, while the
-  ontology extension and selective residual HBP diagnostic failed.
+- SNI-MRENet v1 multiresolution passed its old 21-class seed-42 screen, but
+  SNI v2 multiresolution failed after the target was changed to 15 visual
+  classes and imbalance-aware training was applied.
 
 ## Paused or stopped work at this snapshot
 
@@ -119,7 +123,6 @@ The following must not be resumed automatically:
 - LMMD/UDA robustness;
 - SNI ontology expert extension;
 - selective residual HBP on SNI;
-- Jiao Swin-HSSAM training, which was cancelled after Colab state loss.
 
 Other completed failures and mixed results are listed in the master log.
 Their status can be revisited only with a new explicit hypothesis, not merely
@@ -131,7 +134,7 @@ to seek a positive seed.
 - Source code is pushed to GitHub.
 - Generic per-epoch Hugging Face checkpoint persistence is implemented.
 - Current notebook artifact namespace:
-  `coffee17-multistage-recalibration-v1`.
+  `sni-jiao-hssam-v1`.
 - Current artifact repository:
   `ediprin/coffee-backbone-checkpoints`.
 - A write-enabled `HF_TOKEN` is required in each Colab account.
@@ -140,6 +143,9 @@ to seek a positive seed.
 
 At this snapshot:
 
+- SNI v2 multiresolution seed-42 screening failed and is stopped;
+- Jiao Swin-HSSAM `SJ0` versus `SJFULL` seed-42 validation screening is the
+  only explicitly authorized training stage;
 - MSF0/MSF1 seed-42 validation screening reported PASS;
 - MSFC capacity control completed and MSF1 failed its causal gate;
 - the no-training per-class audit completed and supported the STOP decision;

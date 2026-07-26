@@ -1,6 +1,6 @@
 # Master log eksperimen klasifikasi biji kopi
 
-Terakhir diperbarui: **23 Juli 2026**.
+Terakhir diperbarui: **27 Juli 2026**.
 
 Dokumen ini mengonsolidasikan hasil yang sebelumnya tersebar di report, output
 Colab/Kaggle, README, dan percakapan eksperimen. Tujuannya adalah mencegah
@@ -39,6 +39,7 @@ final.
 | OSR | Dihentikan/diarsipkan | HBP dan ARPL fail-fast gagal |
 | OMSL taxonomy contrastive | Dihentikan | Delta dataset-Macro hanya +0,08 |
 | SNI-MRENet v1 | Dihentikan pada ontology gate | SNIB1 multiresolusi PASS; SNIB2 Macro -0,32 dan Worst -12,37; SNIB3/test tidak dijalankan |
+| SNI v2 multiresolusi | Dihentikan pada screening | S2MR vs GAP: Macro -0,68; Hard -0,41; Bottom-3 -6,10; Worst -21,89 |
 | Residual HBP selektif SNI | Dihentikan | Gagal terhadap SNIB1 dan residual GAP capacity control; seed tambahan/test tidak dijalankan |
 
 ---
@@ -727,3 +728,25 @@ Test tetap terkunci.
 Protokol dan record machine-readable:
 `docs/protocols/COFFEE17_DCL_LOCAL_DETAIL_V1.md` dan
 `docs/results/COFFEE17_DCL_CONFIRMATION.json`.
+
+## 23. SNI v2 GAP versus multiresolusi
+
+**Status: SCREENING SEED 42 FAIL -- STOP, TEST TERKUNCI.** Formulasi v2
+memakai 15 kelas visual, grouped split yang sama, dan inverse-square-root
+weighted sampling hanya pada train.
+
+| Metrik | S2G GAP | S2MR multiresolusi | Delta |
+|---|---:|---:|---:|
+| Macro-F1 | 88,53 | 87,85 | -0,68 |
+| Hard-F1 | 83,97 | 83,55 | -0,41 |
+| Bottom-three F1 | 70,22 | 64,12 | -6,10 |
+| Worst-F1 | 64,00 | 42,11 | -21,89 |
+
+Semua kriteria fail-fast gagal. Seed 123/2026 tidak dijalankan dan test tidak
+dibuka. PASS multiresolusi pada SNI-MRENet v1 21 kelas tidak bereplikasi setelah
+target diubah menjadi 15 kelas visual yang lebih koheren dan training memakai
+weighted sampling.
+
+Dokumen dan record:
+`docs/results/SNI_V2_MULTIRESOLUTION_SEED42.md` dan
+`docs/results/SNI_V2_MULTIRESOLUTION_SEED42.json`.

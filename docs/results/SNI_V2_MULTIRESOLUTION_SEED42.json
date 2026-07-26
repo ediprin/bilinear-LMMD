@@ -1,0 +1,39 @@
+{
+  "protocol": "SNI_v2_GAP_vs_multiresolution",
+  "stage": "screen",
+  "seed": 42,
+  "selection_split": "val",
+  "test_opened": false,
+  "comparison": {
+    "macro_f1": {
+      "baseline": 0.8853,
+      "candidate": 0.8785,
+      "delta": -0.0068
+    },
+    "hard_class_f1": {
+      "baseline": 0.8397,
+      "candidate": 0.8355,
+      "delta": -0.0041
+    },
+    "bottom3_class_f1": {
+      "baseline": 0.7022,
+      "candidate": 0.6412,
+      "delta": -0.061
+    },
+    "worst_class_f1": {
+      "baseline": 0.64,
+      "candidate": 0.4211,
+      "delta": -0.2189
+    }
+  },
+  "decision": {
+    "decision": "FAIL",
+    "criteria": {
+      "macro_f1_improved": false,
+      "hard_f1_improved": false,
+      "bottom3_f1_preserved": false
+    }
+  },
+  "persistent_source": "/content/drive/MyDrive/sni-v2-multiresolution-v1/val_reports/screen_seed42.json",
+  "record_provenance": "transcribed_from_user_supplied_colab_output"
+}
