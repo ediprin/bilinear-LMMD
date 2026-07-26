@@ -93,7 +93,7 @@ class SNIMultiResolutionExpertModel(nn.Module):
     """SNI-MRENet and its controlled first-order ablations.
 
     ``flat`` uses the fused multi-resolution GAP embedding with a single
-    21-class classifier. ``ontology_gap`` and ``ontology_hbp`` factor the
+    configurable classifier. ``ontology_gap`` and ``ontology_hbp`` factor the
     normalized leaf probability into a four-way router and group-conditional
     classifiers. Their bean interaction modules are parameter- and
     dimension-matched; only first-order versus multiplicative pooling differs.
@@ -121,9 +121,10 @@ class SNIMultiResolutionExpertModel(nn.Module):
         super().__init__()
         if mode not in self.MODES:
             raise ValueError(f"Mode SNI-MRE harus salah satu dari {sorted(self.MODES)}.")
-        if num_classes != len(SNI_CLASSES):
+        if mode != "flat" and num_classes != len(SNI_CLASSES):
             raise ValueError(
-                f"SNI-MRENet dikunci ke {len(SNI_CLASSES)} kelas, didapat {num_classes}."
+                "Mode ontology/residual SNI-MRENet dikunci ke "
+                f"{len(SNI_CLASSES)} kelas, didapat {num_classes}."
             )
         if len(out_indices) != 4:
             raise ValueError("SNI-MRENet membutuhkan tepat 4 out_indices.")

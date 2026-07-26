@@ -12,6 +12,9 @@ DEFAULTS: dict[str, Any] = {
     "device": "auto",
     "data": {
         "root": "data/coffee",
+        "dataset_format": "image_folder",
+        "manifest_root": None,
+        "manifest_weight_column": None,
         "source": "source",
         "target": "target",
         "train_split": "train",

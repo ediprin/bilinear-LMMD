@@ -456,6 +456,7 @@ def train(
     seed_override: int | None = None,
     output_dir_override: str | None = None,
     data_root_override: str | None = None,
+    manifest_root_override: str | None = None,
     resume: bool = False,
     artifact_repo: str | None = None,
     artifact_path: str | None = None,
@@ -470,6 +471,8 @@ def train(
         cfg["training"]["output_dir"] = output_dir_override
     if data_root_override is not None:
         cfg["data"]["root"] = data_root_override
+    if manifest_root_override is not None:
+        cfg["data"]["manifest_root"] = manifest_root_override
     seed_everything(int(cfg["seed"]))
     device = resolve_device(cfg["device"])
     adaptation_cfg = cfg["adaptation"]
@@ -1303,6 +1306,10 @@ def main() -> None:
     parser.add_argument("--output-dir", help="Override output_dir dari YAML")
     parser.add_argument("--data-root", help="Override data.root dari YAML")
     parser.add_argument(
+        "--manifest-root",
+        help="Override data.manifest_root untuk dataset berbasis CSV.",
+    )
+    parser.add_argument(
         "--resume",
         action="store_true",
         help="Lanjutkan dari last.pt jika state optimizer lengkap tersedia.",
@@ -1345,6 +1352,7 @@ def main() -> None:
         seed_override=args.seed,
         output_dir_override=args.output_dir,
         data_root_override=args.data_root,
+        manifest_root_override=args.manifest_root,
         resume=args.resume,
         artifact_repo=args.artifact_repo,
         artifact_path=args.artifact_path,
