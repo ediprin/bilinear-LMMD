@@ -803,3 +803,30 @@ before expensive training.
 
 Protocol:
 `docs/protocols/SNI_GROUP_PRIMARY_V3_1.md`.
+
+## 26. SNI v3.1 Jiao Swin-HSSAM model protocol
+
+**Status: PROTOCOL AND RUNNER VERIFIED; NOT YET RUN, TEST LOCKED.**
+
+The paper PDF was rechecked against the implementation before authorizing the
+screen. The transferred package is Swin-T with S3--S5 HS-FPN, SAM before the
+classifier, and CE/focal Fusion Loss. Known reconstruction choices relative to
+the inconsistent paper-linked source remain disclosed rather than presented as
+verbatim reproduction.
+
+The fail-fast order is:
+
+1. S3J0 Swin-T + GAP + CE versus S3J1 full Swin-HSSAM, seed 42;
+2. only after a pass, S3B0 EfficientNetV2-B0 + GAP benchmark;
+3. no factorial, additional seed, or test without a later decision.
+
+All three configurations use the v3 group-class-equal train sampler and select
+checkpoints by validation source-group/class Macro-F1. The gate additionally
+protects group-class Worst-F1 and per-domain Macro-F1.
+
+No accuracy or F1 result is recorded because training has not run.
+
+Protocol and entry point:
+
+- `docs/protocols/SNI_V3_1_JIAO_FAILFAST.md`;
+- `notebooks/sni_v3_jiao_group_primary_colab.ipynb`.

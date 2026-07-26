@@ -38,9 +38,18 @@ evaluator are now implemented. They average probabilities once per
 secondary evidence, and use dataset-stratified source-group cluster bootstrap.
 Generic training can select checkpoints using this group-primary Macro-F1 and
 refuses to resume a checkpoint created under a different selection metric.
-No SNI model protocol, configuration, or training run has yet been authorized;
-Swin-HSSAM and other architecture comparisons remain blocked until a specific
-baseline/candidate gate is frozen.
+
+The first model protocol is now frozen but has not been run. It is a
+literature-verified, fail-fast transfer of Jiao et al.:
+
+1. train S3J0 Swin-T + GAP + CE and S3J1 Swin-HSSAM on seed 42;
+2. stop immediately if S3J1 fails the group-primary, lower-tail, or per-domain
+   gate;
+3. train S3B0 EfficientNetV2-B0 + GAP only if the Jiao mechanism passes;
+4. keep test and extra seeds locked.
+
+This sequencing avoids training the EfficientNet benchmark when the proposed
+Jiao package cannot first beat its same-backbone Swin-T control.
 
 Relevant files:
 
@@ -53,6 +62,9 @@ Relevant files:
 - `docs/results/SNI_V3_SOURCE_BALANCED_SPLIT_AUDIT.md`;
 - `docs/protocols/SNI_GROUP_PRIMARY_V3_1.md`;
 - `src/bilinear_lmmd/analysis/sni_group_primary.py`;
+- `docs/protocols/SNI_V3_1_JIAO_FAILFAST.md`;
+- `src/bilinear_lmmd/experiments/run_sni_v3_jiao_screening.py`;
+- `notebooks/sni_v3_jiao_group_primary_colab.ipynb`;
 - `docs/results/SNI_V2_MULTIRESOLUTION_SEED42.md`.
 
 The previous Coffee17 multistage protocol is closed:
@@ -172,8 +184,8 @@ At this snapshot:
 - SNI v2 multiresolution seed-42 screening failed and is stopped;
 - SNI v3 combined crop-claim gate failed, while its independent source-group
   coverage is sufficient for the now-frozen v3.1 group-primary evaluator;
-- no v3.1 model comparison is authorized; Jiao Swin-HSSAM remains blocked
-  pending a separate baseline/candidate protocol;
+- the v3.1 Jiao mechanism seed-42 screen is authorized but not yet run;
+- S3B0 benchmark, extra seeds, factorial variants, and test remain gated;
 - MSF0/MSF1 seed-42 validation screening reported PASS;
 - MSFC capacity control completed and MSF1 failed its causal gate;
 - the no-training per-class audit completed and supported the STOP decision;
