@@ -758,3 +758,25 @@ bukan hanya jumlah crop.
 Dokumen dan record:
 `docs/results/SNI_V2_MULTIRESOLUTION_SEED42.md` dan
 `docs/results/SNI_V2_MULTIRESOLUTION_SEED42.json`.
+
+## 24. SNI v3 source-group-balanced split audit
+
+**Status: COMBINED CROP-CLAIM GATE FAIL; NO TRAINING, TEST TERKUNCI.**
+
+Manifest v3 memperbaiki kegagalan unit independen v2. Validation sekarang
+memiliki 1.151 source group, termasuk 898 Adrian dan 253 Faruq; Adrian v2
+sebelumnya hanya mempunyai delapan source group. Dua kelas tidak mencapai 50
+crop validation/test (`biji_muda` dan `biji_pecah`), walaupun masing-masing
+memiliki 29--33 source group. Sembilan kombinasi split/kelas juga melampaui
+batas dominasi satu group sebesar 25%.
+
+Gate gabungan yang dibekukan tetap `FAIL` dan tidak diubah setelah melihat
+hasil. Namun, seluruh kelas memenuhi minimum 20 source group per held-out
+split dan kedua domain jauh melampaui 50 group. Karena itu manifest boleh
+dipertimbangkan dalam protokol baru yang menjadikan unit
+`source photograph x class` sebagai metrik primer, bukan sebagai pembenaran
+post-hoc untuk klaim crop-level. Training belum diizinkan.
+
+Dokumen dan record:
+`docs/results/SNI_V3_SOURCE_BALANCED_SPLIT_AUDIT.md` dan
+`docs/results/SNI_V3_SOURCE_BALANCED_SPLIT_AUDIT.json`.

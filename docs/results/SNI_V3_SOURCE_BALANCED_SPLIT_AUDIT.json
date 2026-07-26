@@ -1,0 +1,81 @@
+{
+  "protocol": "SNI_classification_source_group_balanced_v3",
+  "stage": "split_audit",
+  "training_performed": false,
+  "test_opened": false,
+  "frozen_combined_gate": "FAIL",
+  "split_statistics": {
+    "train": {
+      "crops": 22170,
+      "source_groups": 5356,
+      "dataset_group_counts": {
+        "adrian_detection": 4139,
+        "faruq_segmentation": 1217
+      },
+      "largest_group_fraction": 0.0379
+    },
+    "val": {
+      "crops": 4740,
+      "source_groups": 1151,
+      "dataset_group_counts": {
+        "adrian_detection": 898,
+        "faruq_segmentation": 253
+      },
+      "largest_group_fraction": 0.1846
+    },
+    "test": {
+      "crops": 4164,
+      "source_groups": 1145,
+      "dataset_group_counts": {
+        "adrian_detection": 898,
+        "faruq_segmentation": 247
+      },
+      "largest_group_fraction": 0.1513
+    }
+  },
+  "weak_crop_count_classes": {
+    "val": {
+      "biji_muda": {
+        "samples": 38,
+        "groups": 33
+      },
+      "biji_pecah": {
+        "samples": 46,
+        "groups": 29
+      }
+    },
+    "test": {
+      "biji_muda": {
+        "samples": 42,
+        "groups": 29
+      },
+      "biji_pecah": {
+        "samples": 47,
+        "groups": 32
+      }
+    }
+  },
+  "concentration_failures": {
+    "val": {
+      "biji_berkulit_tanduk": 0.30864197530864196,
+      "biji_berlubang_lebih_satu": 0.3364485981308411,
+      "biji_berlubang_satu": 0.4,
+      "biji_hitam": 0.2535211267605634,
+      "biji_hitam_sebagian": 0.2753623188405797,
+      "kopi_gelondong": 0.32894736842105265
+    },
+    "test": {
+      "biji_berlubang_lebih_satu": 0.3684210526315789,
+      "biji_bertutul_tutul": 0.3148148148148148,
+      "biji_hitam": 0.27058823529411763
+    }
+  },
+  "source_group_primary_readiness": {
+    "minimum_groups_per_class_satisfied": true,
+    "minimum_groups_per_dataset_satisfied": true,
+    "ready_for_separate_protocol": true,
+    "training_authorized_by_this_audit": false
+  },
+  "persistent_source": "/content/drive/MyDrive/coffee-sni-instance-crop-v1/classification-v3-source-balanced/audit.json",
+  "record_provenance": "transcribed_from_user_supplied_colab_output"
+}
