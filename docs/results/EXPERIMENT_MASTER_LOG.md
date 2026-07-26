@@ -747,6 +747,14 @@ dibuka. PASS multiresolusi pada SNI-MRENet v1 21 kelas tidak bereplikasi setelah
 target diubah menjadi 15 kelas visual yang lebih koheren dan training memakai
 weighted sampling.
 
+Audit independensi kemudian menemukan bahwa 4.462 crop Adrian pada validation
+hanya berasal dari **8 foto sumber**, sedangkan 507 crop Faruq berasal dari 186
+foto. Pada unit `foto sumber x kelas`, delta multiresolusi menjadi Accuracy
+`+0,37` tetapi Macro-F1 tetap `-0,20` poin. Karena itu keputusan STOP tidak
+berubah, tetapi penurunan Worst-F1 crop-level tidak boleh diperlakukan sebagai
+estimasi independen. Split SNI berikutnya wajib menyeimbangkan unit foto sumber,
+bukan hanya jumlah crop.
+
 Dokumen dan record:
 `docs/results/SNI_V2_MULTIRESOLUTION_SEED42.md` dan
 `docs/results/SNI_V2_MULTIRESOLUTION_SEED42.json`.

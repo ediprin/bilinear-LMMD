@@ -24,9 +24,12 @@ bottom-three `-6.10`, and Worst `-21.89` points. Seeds 123/2026 and test must
 not be run for this protocol.
 
 The user explicitly resumed the separate controlled Jiao Swin-HSSAM
-validation screen on the audited 21-class SNI instance crops. Run only `SJ0`
-versus `SJFULL` seed 42 first. The remaining factorial and additional seeds
-remain gated; test stays locked.
+validation screen on the audited 21-class SNI instance crops. A later
+independence audit found that the current validation split contains 4,462
+Adrian crops from only 8 dense source photographs. Therefore an already-running
+`SJ0` versus `SJFULL` seed-42 job may finish only as an engineering screen; it
+must not be treated as thesis evidence or expanded to more seeds/test until a
+source-group-balanced split is frozen.
 
 Relevant files:
 
@@ -98,7 +101,13 @@ v1 is closed; do not run further MSF seeds or test.
 - 31,074 audited crops;
 - 21 shared classes;
 - grouped by source image;
-- available for later work but not used by the current quick MSF screen.
+- no generated cross-split identity leak;
+- current validation is nevertheless dominated by 4,462 Adrian crops from only
+  8 dense source photographs, versus 507 Faruq crops from 186 photographs;
+- a replacement split must balance source groups per dataset/class and report
+  crop-level plus source-group/class metrics with cluster-aware uncertainty;
+- available for engineering screens, but the current split is not adequate for
+  final architecture claims.
 
 ## Important prior evidence
 
@@ -144,8 +153,8 @@ to seek a positive seed.
 At this snapshot:
 
 - SNI v2 multiresolution seed-42 screening failed and is stopped;
-- Jiao Swin-HSSAM `SJ0` versus `SJFULL` seed-42 validation screening is the
-  only explicitly authorized training stage;
+- Jiao Swin-HSSAM `SJ0` versus `SJFULL` seed-42 may finish only as an
+  engineering screen pending a source-group-balanced SNI split;
 - MSF0/MSF1 seed-42 validation screening reported PASS;
 - MSFC capacity control completed and MSF1 failed its causal gate;
 - the no-training per-class audit completed and supported the STOP decision;

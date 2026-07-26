@@ -34,6 +34,49 @@
       "bottom3_f1_preserved": false
     }
   },
+  "posthoc_independence_audit": {
+    "selection_split": "val",
+    "diagnostic_only": true,
+    "validation_structure": {
+      "adrian_detection": {
+        "crops": 4462,
+        "source_groups": 8,
+        "classes": 15
+      },
+      "faruq_segmentation": {
+        "crops": 507,
+        "source_groups": 186,
+        "classes": 14
+      }
+    },
+    "crop_metrics": {
+      "S2G": {
+        "accuracy": 0.9519017911048501,
+        "macro_f1": 0.8853384888329044
+      },
+      "S2MR": {
+        "accuracy": 0.9464681022338499,
+        "macro_f1": 0.878493877029787
+      }
+    },
+    "group_class_metrics": {
+      "S2G": {
+        "accuracy": 0.9227941176470589,
+        "macro_f1": 0.8589208081049814
+      },
+      "S2MR": {
+        "accuracy": 0.9264705882352942,
+        "macro_f1": 0.8569253263442236
+      }
+    },
+    "crop_outcomes": {
+      "both_correct": 4656,
+      "both_wrong": 192,
+      "gap_only_correct": 74,
+      "multires_only_correct": 47
+    },
+    "interpretation": "Grouped splitting prevented source-image leakage, but validation is dominated by 4462 correlated Adrian crops from only 8 dense source photographs. The FAIL decision remains because group/class Macro-F1 also does not improve, while the crop-level Worst-F1 magnitude is not a reliable independent-sample estimate."
+  },
   "persistent_source": "/content/drive/MyDrive/sni-v2-multiresolution-v1/val_reports/screen_seed42.json",
   "record_provenance": "transcribed_from_user_supplied_colab_output"
 }
