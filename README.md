@@ -52,6 +52,14 @@ mengalahkan SNIB1 dan kontrol residual GAP. Seed tambahan serta test tidak
 dijalankan; catatan hasil tersedia di
 [docs/results/SNI_SELECTIVE_HBP_DIAGNOSTIC_SEED42.md](docs/results/SNI_SELECTIVE_HBP_DIAGNOSTIC_SEED42.md).
 
+Audit independensi terbaru menemukan bahwa split lama mengisi validation
+Adrian dengan 4.462 crop dari hanya delapan foto sumber. Sebelum training SNI
+berikutnya, bangun manifest source-group-balanced v3 tanpa menyalin gambar atau
+memakai GPU. Protokol dan notebook:
+[docs/protocols/SNI_SOURCE_GROUP_BALANCED_V3.md](docs/protocols/SNI_SOURCE_GROUP_BALANCED_V3.md)
+dan
+[notebooks/sni_source_balanced_v3_colab.ipynb](notebooks/sni_source_balanced_v3_colab.ipynb).
+
 Kode disusun berdasarkan concern: konfigurasi dan artefak di `core`, loader dan
 preparasi dataset di `data`, arsitektur/loss di `modeling`, eksekusi generik di
 `engine`, orkestrasi studi di `experiments`, serta agregasi di `reporting`.

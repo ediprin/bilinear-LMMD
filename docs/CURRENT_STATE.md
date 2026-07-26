@@ -10,8 +10,8 @@ Agents must verify it against protocols, raw reports, and the experiment log.
 
 - Repository scope: coffee-bean classification, not the separate YOLO/detection
   project.
-- Immediate task type: validation-only controlled Swin-HSSAM/Jiao screening
-  on the audited SNI instance-crop dataset; SNI v2 multiresolution is stopped.
+- Immediate task type: no-training construction and audit of the SNI
+  source-group-balanced v3 manifest; SNI v2 multiresolution is stopped.
 - OSR and LMMD/UDA are not currently requested.
 - Avoid additional expensive training without a frozen, literature-grounded
   comparison.
@@ -23,19 +23,22 @@ lost to S2G GAP on validation seed 42: Macro `-0.68`, Hard `-0.41`,
 bottom-three `-6.10`, and Worst `-21.89` points. Seeds 123/2026 and test must
 not be run for this protocol.
 
-The user explicitly resumed the separate controlled Jiao Swin-HSSAM
-validation screen on the audited 21-class SNI instance crops. A later
-independence audit found that the current validation split contains 4,462
-Adrian crops from only 8 dense source photographs. Therefore an already-running
-`SJ0` versus `SJFULL` seed-42 job may finish only as an engineering screen; it
-must not be treated as thesis evidence or expanded to more seeds/test until a
-source-group-balanced split is frozen.
+The independence audit found that the current validation split contains 4,462
+Adrian crops from only 8 dense source photographs. The next runnable step is
+therefore CPU-only manifest construction with
+`prepare_sni_classification_v3`; it reuses existing crop paths and does not
+train a model. Swin-HSSAM and all other SNI architecture comparisons remain
+blocked until the v3 split gate passes and its training weighting rule is
+frozen.
 
 Relevant files:
 
 - `docs/protocols/JIAO_SWIN_HSSAM_PROTOCOL.md`;
 - `src/bilinear_lmmd/experiments/run_jiao_swin_hssam_screening.py`;
 - `notebooks/jiao_swin_hssam_failfast_colab.ipynb`;
+- `docs/protocols/SNI_SOURCE_GROUP_BALANCED_V3.md`;
+- `src/bilinear_lmmd/data/preparation/prepare_sni_classification_v3.py`;
+- `notebooks/sni_source_balanced_v3_colab.ipynb`;
 - `docs/results/SNI_V2_MULTIRESOLUTION_SEED42.md`.
 
 The previous Coffee17 multistage protocol is closed:
@@ -153,8 +156,9 @@ to seek a positive seed.
 At this snapshot:
 
 - SNI v2 multiresolution seed-42 screening failed and is stopped;
-- Jiao Swin-HSSAM `SJ0` versus `SJFULL` seed-42 may finish only as an
-  engineering screen pending a source-group-balanced SNI split;
+- SNI v3 source-group-balanced manifest construction is the only active step
+  and performs no training;
+- Jiao Swin-HSSAM is blocked pending a passing SNI v3 split audit;
 - MSF0/MSF1 seed-42 validation screening reported PASS;
 - MSFC capacity control completed and MSF1 failed its causal gate;
 - the no-training per-class audit completed and supported the STOP decision;
