@@ -29,6 +29,9 @@ from bilinear_lmmd.core.artifact_store import (
 )
 from bilinear_lmmd.core.config import load_config
 from bilinear_lmmd.data.loaders import build_loaders
+from bilinear_lmmd.engine.group_evaluation import (
+    aggregate_group_class_probabilities,
+)
 from bilinear_lmmd.modeling.hierarchy import build_parent_hierarchy
 from bilinear_lmmd.modeling.losses import (
     BalancedSoftmaxLoss,
@@ -414,6 +417,23 @@ def classification_metrics(
     }
 
 
+def selection_score(metrics: dict, selection_metric: str) -> float:
+    if selection_metric == "macro_f1":
+        return float(metrics["macro_f1"])
+    if selection_metric == "source_group_class_macro_f1":
+        group_metrics = metrics.get("source_group_class")
+        if group_metrics is None:
+            raise ValueError(
+                "source_group_class_macro_f1 memerlukan manifest validation "
+                "dengan dataset, group_id, dan visual_label."
+            )
+        return float(group_metrics["macro_f1"])
+    raise ValueError(
+        "evaluation.selection_metric harus 'macro_f1' atau "
+        "'source_group_class_macro_f1'."
+    )
+
+
 @torch.no_grad()
 def evaluate(
     model: nn.Module,
@@ -424,10 +444,12 @@ def evaluate(
     prediction_head: str = "fused",
     non_blocking: bool = False,
     channels_last: bool = False,
+    source_group_class: bool = False,
 ) -> dict:
     model.eval()
     predictions: list[int] = []
     labels: list[int] = []
+    probabilities: list[list[float]] = []
     for images, targets in loader:
         images = prepare_images(
             images,
@@ -448,7 +470,34 @@ def evaluate(
             logits = output.expert_logits[prediction_head]
         predictions.extend(logits.argmax(1).cpu().tolist())
         labels.extend(targets.tolist())
-    return classification_metrics(labels, predictions, class_names, hard_groups)
+        if source_group_class:
+            probabilities.extend(logits.softmax(dim=1).cpu().tolist())
+    metrics = classification_metrics(
+        labels, predictions, class_names, hard_groups
+    )
+    if source_group_class:
+        rows = getattr(loader.dataset, "rows", None)
+        if rows is None:
+            raise ValueError(
+                "Group-primary evaluation hanya tersedia untuk manifest dataset."
+            )
+        bundle = aggregate_group_class_probabilities(
+            rows,
+            labels,
+            np.asarray(probabilities, dtype=np.float64),
+            class_names,
+        )
+        metrics["source_group_class"] = classification_metrics(
+            list(bundle.labels),
+            list(bundle.predictions),
+            class_names,
+            hard_groups,
+        )
+        metrics["source_group_class"]["unit_count"] = len(bundle.labels)
+        metrics["source_group_class"]["source_group_count"] = len(
+            set(bundle.cluster_keys)
+        )
+    return metrics
 
 
 def train(
@@ -829,7 +878,30 @@ def train(
     best_expert_f1 = {name: -1.0 for name in dual_expert_names}
     history = []
     start_epoch = 0
-    hard_groups = cfg.get("evaluation", {}).get("hard_groups", {})
+    evaluation_cfg = cfg.get("evaluation", {})
+    hard_groups = evaluation_cfg.get("hard_groups", {})
+    selection_metric = str(
+        evaluation_cfg.get("selection_metric", "macro_f1")
+    )
+    if selection_metric not in {
+        "macro_f1",
+        "source_group_class_macro_f1",
+    }:
+        raise ValueError(
+            "evaluation.selection_metric harus 'macro_f1' atau "
+            "'source_group_class_macro_f1'."
+        )
+    source_group_class = (
+        selection_metric == "source_group_class_macro_f1"
+    )
+    if (
+        source_group_class
+        and getattr(loaders.source_val.dataset, "rows", None) is None
+    ):
+        raise ValueError(
+            "source_group_class_macro_f1 hanya dapat dipakai dengan "
+            "manifest validation."
+        )
 
     last_checkpoint = output_dir / "last.pt"
     if resume and last_checkpoint.is_file():
@@ -852,6 +924,15 @@ def train(
             else:
                 if checkpoint.get("classes") != loaders.classes:
                     raise ValueError("Urutan kelas checkpoint resume berbeda dari dataset.")
+                checkpoint_selection_metric = checkpoint.get(
+                    "selection_metric", "macro_f1"
+                )
+                if checkpoint_selection_metric != selection_metric:
+                    raise ValueError(
+                        "Checkpoint resume memakai selection metric berbeda: "
+                        f"{checkpoint_selection_metric!r} != "
+                        f"{selection_metric!r}."
+                    )
                 model.load_state_dict(checkpoint["model"])
                 optimizer.load_state_dict(checkpoint["optimizer"])
                 scheduler.load_state_dict(checkpoint["scheduler"])
@@ -1046,6 +1127,7 @@ def train(
             hard_groups,
             non_blocking=non_blocking,
             channels_last=channels_last,
+            source_group_class=source_group_class,
         )
         source_expert_metrics_raw = {
             name: evaluate(
@@ -1057,6 +1139,7 @@ def train(
                 prediction_head=name,
                 non_blocking=non_blocking,
                 channels_last=channels_last,
+                source_group_class=source_group_class,
             )
             for name in dual_expert_names
         }
@@ -1082,6 +1165,7 @@ def train(
                 hard_groups,
                 non_blocking=non_blocking,
                 channels_last=channels_last,
+                source_group_class=source_group_class,
             )
             if ema is not None and ema_started
             else None
@@ -1181,21 +1265,28 @@ def train(
 
         selection_metrics = source_metrics
         selection_ready = ema is None or ema_started
-        is_best = selection_ready and selection_metrics["macro_f1"] > best_f1
+        selected_score = selection_score(
+            selection_metrics, selection_metric
+        )
+        is_best = selection_ready and selected_score > best_f1
         if is_best:
-            best_f1 = selection_metrics["macro_f1"]
+            best_f1 = selected_score
+        raw_score = selection_score(source_metrics_raw, selection_metric)
         raw_is_best = (
-            ema is not None and source_metrics_raw["macro_f1"] > best_raw_f1
+            ema is not None and raw_score > best_raw_f1
         )
         if raw_is_best:
-            best_raw_f1 = source_metrics_raw["macro_f1"]
+            best_raw_f1 = raw_score
         expert_is_best = {
-            name: metrics["macro_f1"] > best_expert_f1[name]
+            name: selection_score(metrics, selection_metric)
+            > best_expert_f1[name]
             for name, metrics in source_expert_metrics_raw.items()
         }
         for name, improved in expert_is_best.items():
             if improved:
-                best_expert_f1[name] = source_expert_metrics_raw[name]["macro_f1"]
+                best_expert_f1[name] = selection_score(
+                    source_expert_metrics_raw[name], selection_metric
+                )
 
         checkpoint = {
             "model": model.state_dict(),
@@ -1207,6 +1298,7 @@ def train(
             "target_metrics": target_metrics,
             "history": history,
             "best_f1": best_f1,
+            "selection_metric": selection_metric,
             "best_expert_f1": best_expert_f1,
             "grad_scaler": grad_scaler.state_dict(),
         }
@@ -1227,6 +1319,7 @@ def train(
                     "epoch",
                     "target_metrics",
                     "best_f1",
+                    "selection_metric",
                 )
             }
             if ema is not None and ema_started:
@@ -1247,6 +1340,7 @@ def train(
                 "epoch": epoch + 1,
                 "target_metrics": target_metrics_raw,
                 "best_f1": best_expert_f1[name],
+                "selection_metric": selection_metric,
                 "weights": "raw",
                 "selection_head": name,
             }
@@ -1259,6 +1353,7 @@ def train(
                 "epoch": epoch + 1,
                 "target_metrics": target_metrics_raw,
                 "best_f1": best_raw_f1,
+                "selection_metric": selection_metric,
                 "weights": "raw",
             }
             atomic_torch_save(raw_best_checkpoint, output_dir / "best_raw.pt")

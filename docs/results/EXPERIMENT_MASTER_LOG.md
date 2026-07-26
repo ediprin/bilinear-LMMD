@@ -780,3 +780,26 @@ post-hoc untuk klaim crop-level. Training belum diizinkan.
 Dokumen dan record:
 `docs/results/SNI_V3_SOURCE_BALANCED_SPLIT_AUDIT.md` dan
 `docs/results/SNI_V3_SOURCE_BALANCED_SPLIT_AUDIT.json`.
+
+## 25. SNI v3.1 source-group-primary evaluation protocol
+
+**Status: EVALUATOR FROZEN AND VERIFIED; NO TRAINING, TEST TERKUNCI.**
+
+This is a separately versioned estimand and does not overturn the failed v3
+crop-claim gate. Predictions are averaged once per
+`dataset x source photograph x visual class`; group-class Macro-F1 is primary,
+crop-level Macro-F1 is secondary, and uncertainty uses a dataset-stratified
+source-group cluster bootstrap.
+
+Reusable training now supports
+`evaluation.selection_metric=source_group_class_macro_f1`. Checkpoints record
+the selection metric, and incompatible resume attempts are rejected. This
+prevents a nominally group-primary study from silently selecting epochs using
+crop-level Macro-F1.
+
+No model, seed, or test result is recorded here. A separate model protocol must
+still freeze the baseline, candidate, acceptance gate, and artifact namespace
+before expensive training.
+
+Protocol:
+`docs/protocols/SNI_GROUP_PRIMARY_V3_1.md`.

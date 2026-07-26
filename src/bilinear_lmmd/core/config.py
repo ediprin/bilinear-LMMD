@@ -109,6 +109,7 @@ DEFAULTS: dict[str, Any] = {
         "groups": {},
     },
     "evaluation": {
+        "selection_metric": "macro_f1",
         "hard_groups": {
             "sour_black": ["Partial Black", "Partial Sour", "Full Sour"],
             "shape_withered": ["Withered", "Immature", "Cut"],

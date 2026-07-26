@@ -30,11 +30,17 @@ photograph. No training was run and test remains locked.
 
 The principal independence problem was nevertheless corrected: validation now
 has 898 Adrian and 253 Faruq source groups instead of only eight Adrian groups.
-Every visual class has at least 20 validation/test source groups. The next
-allowed work is therefore protocol design and implementation of
-source-photograph-by-class evaluation; it must be versioned separately and
-must not rewrite the failed v3 crop-claim gate. Swin-HSSAM and all other SNI
-architecture comparisons remain blocked until that protocol is frozen.
+Every visual class has at least 20 validation/test source groups.
+
+The separate v3.1 source-group-primary evaluation protocol and reusable
+evaluator are now implemented. They average probabilities once per
+`dataset x source photograph x visual class`, retain crop metrics only as
+secondary evidence, and use dataset-stratified source-group cluster bootstrap.
+Generic training can select checkpoints using this group-primary Macro-F1 and
+refuses to resume a checkpoint created under a different selection metric.
+No SNI model protocol, configuration, or training run has yet been authorized;
+Swin-HSSAM and other architecture comparisons remain blocked until a specific
+baseline/candidate gate is frozen.
 
 Relevant files:
 
@@ -45,6 +51,8 @@ Relevant files:
 - `src/bilinear_lmmd/data/preparation/prepare_sni_classification_v3.py`;
 - `notebooks/sni_source_balanced_v3_colab.ipynb`;
 - `docs/results/SNI_V3_SOURCE_BALANCED_SPLIT_AUDIT.md`;
+- `docs/protocols/SNI_GROUP_PRIMARY_V3_1.md`;
+- `src/bilinear_lmmd/analysis/sni_group_primary.py`;
 - `docs/results/SNI_V2_MULTIRESOLUTION_SEED42.md`.
 
 The previous Coffee17 multistage protocol is closed:
@@ -163,8 +171,9 @@ At this snapshot:
 
 - SNI v2 multiresolution seed-42 screening failed and is stopped;
 - SNI v3 combined crop-claim gate failed, while its independent source-group
-  coverage is sufficient for a separately frozen group-primary protocol;
-- Jiao Swin-HSSAM is blocked pending that group-primary protocol;
+  coverage is sufficient for the now-frozen v3.1 group-primary evaluator;
+- no v3.1 model comparison is authorized; Jiao Swin-HSSAM remains blocked
+  pending a separate baseline/candidate protocol;
 - MSF0/MSF1 seed-42 validation screening reported PASS;
 - MSFC capacity control completed and MSF1 failed its causal gate;
 - the no-training per-class audit completed and supported the STOP decision;
