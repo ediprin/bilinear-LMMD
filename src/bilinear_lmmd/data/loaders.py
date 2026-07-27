@@ -1,14 +1,17 @@
 from __future__ import annotations
 
+import csv
 from dataclasses import dataclass
+import json
 import math
 from pathlib import Path
 import random
 
 import numpy as np
 from PIL import Image
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, Dataset, WeightedRandomSampler
 from torchvision import datasets, transforms
+from torchvision.datasets.folder import default_loader
 from torchvision.transforms import functional as TF
 
 from bilinear_lmmd.data.attribute_features import segment_bean
@@ -21,6 +24,93 @@ class DomainLoaders:
     target_train: DataLoader | None
     target_val: DataLoader | None
     classes: list[str]
+
+
+class ManifestImageDataset(Dataset):
+    """Image dataset backed by a leakage-audited CSV manifest."""
+
+    def __init__(
+        self,
+        image_root: Path,
+        manifest_path: Path,
+        classes: list[str],
+        transform=None,
+        weight_column: str | None = None,
+    ):
+        if not manifest_path.is_file():
+            raise FileNotFoundError(f"Manifest tidak ditemukan: {manifest_path}")
+        with manifest_path.open(newline="", encoding="utf-8") as handle:
+            rows = list(csv.DictReader(handle))
+        if not rows:
+            raise ValueError(f"Manifest kosong: {manifest_path}")
+        required = {"crop_path", "visual_label"}
+        missing = required.difference(rows[0])
+        if missing:
+            raise ValueError(
+                f"Kolom manifest kurang pada {manifest_path}: {sorted(missing)}"
+            )
+
+        self.root = str(image_root)
+        self.manifest_path = str(manifest_path)
+        self.classes = list(classes)
+        self.class_to_idx = {
+            class_name: index for index, class_name in enumerate(self.classes)
+        }
+        self.transform = transform
+        self.target_transform = None
+        self.loader = default_loader
+        self.rows = rows
+        self.samples: list[tuple[str, int]] = []
+        self.targets: list[int] = []
+        self.sample_weights: list[float] | None = (
+            [] if weight_column is not None else None
+        )
+
+        resolved_root = image_root.resolve()
+        for row in rows:
+            label = row["visual_label"]
+            if label not in self.class_to_idx:
+                raise ValueError(f"Label manifest tidak dikenal: {label}")
+            path = (image_root / row["crop_path"]).resolve()
+            try:
+                path.relative_to(resolved_root)
+            except ValueError as exc:
+                raise ValueError(
+                    f"Path crop keluar dari image_root: {row['crop_path']}"
+                ) from exc
+            if not path.is_file():
+                raise FileNotFoundError(f"Crop manifest tidak ditemukan: {path}")
+            target = self.class_to_idx[label]
+            self.samples.append((str(path), target))
+            self.targets.append(target)
+            if self.sample_weights is not None:
+                raw_weight = row.get(weight_column or "", "")
+                if raw_weight == "":
+                    raise ValueError(
+                        f"Bobot {weight_column!r} kosong pada {manifest_path}"
+                    )
+                weight = float(raw_weight)
+                if not math.isfinite(weight) or weight <= 0.0:
+                    raise ValueError(f"Bobot sampel tidak valid: {weight}")
+                self.sample_weights.append(weight)
+
+        observed = {label for _, label in self.samples}
+        expected = set(range(len(self.classes)))
+        if observed != expected:
+            absent = [self.classes[index] for index in sorted(expected - observed)]
+            raise ValueError(
+                f"Manifest {manifest_path.name} tidak mencakup kelas: {absent}"
+            )
+
+    def __len__(self) -> int:
+        return len(self.samples)
+
+    def __getitem__(self, index: int):
+        path, target = self.samples[index]
+        image = self.loader(path)
+        if self.transform is not None:
+            image = self.transform(image)
+        return image, target
 
 
 class SameClassPairDataset:
@@ -195,6 +285,113 @@ def build_image_transform(
 
 
 def build_loaders(cfg: dict, require_target: bool = True) -> DomainLoaders:
+    dataset_format = str(cfg.get("dataset_format", "image_folder"))
+    if dataset_format == "sni_manifest_v2":
+        if require_target:
+            raise ValueError(
+                "SNI manifest v2 internal hanya mendukung source-only training."
+            )
+        image_root = Path(cfg["root"])
+        manifest_value = cfg.get("manifest_root")
+        if not manifest_value:
+            raise ValueError("data.manifest_root wajib untuk SNI manifest v2.")
+        manifest_root = Path(manifest_value)
+        audit_path = manifest_root / "audit.json"
+        ontology_path = manifest_root / "ontology.json"
+        if not audit_path.is_file() or not ontology_path.is_file():
+            raise FileNotFoundError(
+                "SNI v2 belum lengkap: audit.json dan ontology.json wajib ada."
+            )
+        audit = json.loads(audit_path.read_text(encoding="utf-8"))
+        if audit.get("status") != "complete":
+            raise ValueError("Audit SNI manifest v2 belum berstatus complete.")
+        ontology = json.loads(ontology_path.read_text(encoding="utf-8"))
+        classes = list(ontology.get("visual_classes", ()))
+        if not classes:
+            raise ValueError("ontology.json tidak memiliki visual_classes.")
+
+        image_size = int(cfg["image_size"])
+        rotation_angles = [
+            float(angle) for angle in cfg.get("rotation_angles", [0])
+        ]
+        object_crop = bool(cfg.get("object_crop", False))
+        object_crop_margin = float(cfg.get("object_crop_margin", 0.10))
+        augmentation_mode = str(cfg.get("augmentation_mode", "standard"))
+        train_split = str(cfg.get("train_split", "train"))
+        val_split = str(cfg.get("val_split", "val"))
+        weight_column = cfg.get("manifest_weight_column")
+        train_manifest = (
+            manifest_root
+            / "manifests"
+            / ("train_weighted.csv" if weight_column else f"{train_split}.csv")
+        )
+        val_manifest = manifest_root / "manifests" / f"{val_split}.csv"
+        train_dataset = ManifestImageDataset(
+            image_root,
+            train_manifest,
+            classes,
+            transform=_transforms(
+                image_size,
+                train=True,
+                rotation_angles=rotation_angles,
+                object_crop=object_crop,
+                object_crop_margin=object_crop_margin,
+                augmentation_mode=augmentation_mode,
+            ),
+            weight_column=str(weight_column) if weight_column else None,
+        )
+        val_dataset = ManifestImageDataset(
+            image_root,
+            val_manifest,
+            classes,
+            transform=_transforms(
+                image_size,
+                train=False,
+                rotation_angles=rotation_angles,
+                object_crop=object_crop,
+                object_crop_margin=object_crop_margin,
+                augmentation_mode=augmentation_mode,
+            ),
+        )
+        workers = int(cfg.get("workers", 4))
+        loader_kwargs = {
+            "batch_size": int(cfg["batch_size"]),
+            "num_workers": workers,
+            "pin_memory": True,
+            "persistent_workers": workers > 0,
+        }
+        sampler = (
+            WeightedRandomSampler(
+                train_dataset.sample_weights,
+                num_samples=len(train_dataset),
+                replacement=True,
+            )
+            if train_dataset.sample_weights is not None
+            else None
+        )
+        return DomainLoaders(
+            source_train=DataLoader(
+                train_dataset,
+                shuffle=sampler is None,
+                sampler=sampler,
+                drop_last=True,
+                **loader_kwargs,
+            ),
+            source_val=DataLoader(
+                val_dataset,
+                shuffle=False,
+                drop_last=False,
+                **loader_kwargs,
+            ),
+            target_train=None,
+            target_val=None,
+            classes=classes,
+        )
+    if dataset_format != "image_folder":
+        raise ValueError(
+            "data.dataset_format harus 'image_folder' atau 'sni_manifest_v2'."
+        )
+
     root = Path(cfg["root"])
     train_split = cfg.get("train_split", "train")
     val_split = cfg.get("val_split", "val")

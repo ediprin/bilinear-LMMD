@@ -38,6 +38,7 @@ def collect_checkpoint_predictions(
     domain: str,
     split: str,
     data_root: Path | None = None,
+    manifest_root: Path | None = None,
     progress_desc: str | None = None,
     prediction_head: str = "fused",
 ) -> CheckpointPredictions:
@@ -47,6 +48,8 @@ def collect_checkpoint_predictions(
     cfg["data"]["val_split"] = split
     if data_root is not None:
         cfg["data"]["root"] = str(data_root)
+    if manifest_root is not None:
+        cfg["data"]["manifest_root"] = str(manifest_root)
     device = resolve_device(cfg["device"])
     loaders = build_loaders(cfg["data"], require_target=domain == "target")
     loader = loaders.source_val if domain == "source" else loaders.target_val
@@ -106,6 +109,7 @@ def evaluate_checkpoint(
     split: str,
     output_dir: Path,
     data_root: Path | None = None,
+    manifest_root: Path | None = None,
     prediction_head: str = "fused",
 ) -> None:
     bundle = collect_checkpoint_predictions(
@@ -113,6 +117,7 @@ def evaluate_checkpoint(
         domain,
         split,
         data_root=data_root,
+        manifest_root=manifest_root,
         progress_desc=f"evaluate {domain}/{split}",
         prediction_head=prediction_head,
     )
@@ -212,6 +217,11 @@ def main() -> None:
         help="Override data.root checkpoint, berguna jika folder dipindahkan.",
     )
     parser.add_argument(
+        "--manifest-root",
+        type=Path,
+        help="Override data.manifest_root checkpoint.",
+    )
+    parser.add_argument(
         "--prediction-head",
         default="fused",
         help="Gunakan fused atau nama expert seperti gap/hbp.",
@@ -223,6 +233,7 @@ def main() -> None:
         args.split,
         args.output_dir,
         data_root=args.data_root,
+        manifest_root=args.manifest_root,
         prediction_head=args.prediction_head,
     )
 

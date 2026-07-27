@@ -1,0 +1,31 @@
+data:
+  root: data/sni-instance-crops
+  dataset_format: sni_manifest_v2
+  manifest_root: data/sni-classification-v3
+  image_size: 224
+  batch_size: 32
+  workers: 2
+  augmentation_mode: standard
+  manifest_weight_column: train_weight_group_class_equal
+model:
+  backbone: swin_tiny_patch4_window7_224.ms_in1k
+  pretrained: true
+  head: swin_gap
+  num_classes: 15
+  out_indices: [1, 2, 3]
+  classifier: linear
+adaptation:
+  method: source_only
+training:
+  epochs: 50
+  precision: amp_fp16
+  channels_last: false
+  non_blocking: true
+  classification_loss: cross_entropy
+  output_dir: outputs/S3J0_swin_tiny_gap_group_primary
+evaluation:
+  selection_metric: source_group_class_macro_f1
+  hard_groups:
+    black_variant: [biji_hitam, biji_hitam_pecah, biji_hitam_sebagian]
+    hole_count: [biji_berlubang_satu, biji_berlubang_lebih_satu]
+    subtle_condition: [biji_bertutul_tutul, biji_coklat, biji_muda]
